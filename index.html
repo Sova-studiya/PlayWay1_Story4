@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Мемори: Цифры 1-6</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', sans-serif;
+            background: url('img/body.jpg') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px;
+            touch-action: manipulation;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Затемнение фона для лучшей читаемости */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            z-index: -1;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-height: -webkit-fill-available;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            color: #1565c0;
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            margin-bottom: 3px;
+            text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.9);
+            padding: 5px;
+            line-height: 1.1;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            margin-top: 5px;
+            border: 2px solid #ffcc00;
+        }
+
+        .subtitle {
+            color: #ff6b35;
+            font-size: clamp(0.9rem, 3vw, 1.4rem);
+            margin-bottom: 6px;
+            font-weight: bold;
+            padding: 6px 10px;
+            line-height: 1.1;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            border: 2px solid #42a5f5;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(255, 255, 255, 0.95);
+            padding: clamp(8px, 2vw, 15px);
+            border-radius: 15px;
+            margin: 5px auto 10px;
+            width: 95%;
+            max-width: 500px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            border: clamp(2px, 1vw, 4px) solid #ffcc00;
+            font-size: clamp(0.9rem, 3.5vw, 1.3rem);
+            color: #2c3e50;
+            flex-shrink: 0;
+            backdrop-filter: blur(5px);
+        }
+
+        .game-board-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 3px;
+            width: 100%;
+            min-height: 0;
+            margin-bottom: 5px;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: clamp(6px, 1.5vw, 12px);
+            width: 100%;
+            height: 100%;
+            max-width: 700px;
+            max-height: 700px;
+            margin: 0 auto;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 20px;
+            border: 4px solid #42a5f5;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .card {
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            min-height: 70px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card.matched {
+            cursor: default;
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: clamp(3px, 1vw, 6px) solid white;
+        }
+
+        .card-front {
+            background: #ffcc00;
+            transform: rotateY(180deg);
+            padding: 2%;
+        }
+
+        .card-front img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+        
+        .card-back {
+            background: linear-gradient(135deg, #42a5f5 0%, #2196f3 100%);
+            padding: 8%;
+        }
+        
+        .card-back::before {
+            content: '?';
+            position: absolute;
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls {
+            margin-top: auto;
+            padding: 8px 0 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-shrink: 0;
+            width: 100%;
+            position: relative;
+            z-index: 10;
+        }
+
+        button {
+            background: linear-gradient(135deg, #ff6b35 0%, #ff8a50 100%);
+            color: white;
+            border: none;
+            padding: clamp(8px, 2vw, 12px) clamp(15px, 4vw, 20px);
+            font-size: clamp(0.9rem, 3vw, 1.2rem);
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+            font-weight: bold;
+            min-width: 110px;
+            max-width: 40%;
+            min-height: 40px;
+            touch-action: manipulation;
+            border: 2px solid white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.25);
+        }
+
+        button:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .win-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .win-message h2 {
+            color: #ffcc00;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.7);
+            line-height: 1.2;
+        }
+
+        .win-message p {
+            font-size: clamp(1.2rem, 4vw, 2rem);
+            margin-bottom: 10px;
+            color: #bbdefb;
+            line-height: 1.3;
+        }
+
+        #play-again-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            min-width: 200px;
+            min-height: 50px;
+        }
+
+        .quiz-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 15px;
+        }
+
+        .quiz-content {
+            background: white;
+            border-radius: 25px;
+            padding: 20px;
+            max-width: 450px;
+            width: 95%;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            border: 5px solid #ffcc00;
+            background: rgba(255, 255, 255, 0.98);
+        }
+
+        .quiz-header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .quiz-header-icon {
+            font-size: 3rem;
+            color: #ff6b35;
+            margin-bottom: 8px;
+            cursor: pointer; /* Для возможности повторного проигрывания звука */
+        }
+
+        .quiz-question {
+            font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+            color: #1565c0;
+            margin-bottom: 20px;
+            font-weight: bold;
+            padding: 8px;
+            background: rgba(187, 222, 251, 0.3);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .quiz-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .quiz-option {
+            background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+            border: 3px solid #42a5f5;
+            border-radius: 20px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .quiz-option img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .quiz-option:hover {
+            background: linear-gradient(135deg, #90caf9 0%, #64b5f6 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .quiz-option:active {
+            transform: translateY(0);
+        }
+        
+        /* Добавлен стиль для блокировки кликов */
+        .quiz-option.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none !important;
+        }
+
+        .quiz-option.correct {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            border-color: #2E7D32;
+        }
+
+        .quiz-option.wrong {
+            background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+            border-color: #c62828;
+        }
+
+        .quiz-feedback {
+            font-size: clamp(1rem, 3vw, 1.4rem);
+            font-weight: bold;
+            margin-top: 12px;
+            min-height: 25px;
+            text-align: center;
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .quiz-feedback.correct {
+            color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .quiz-feedback.wrong {
+            color: #f44336;
+            background: rgba(244, 67, 54, 0.1);
+        }
+
+        .card.matched .card-front {
+            box-shadow: 0 0 12px 5px rgba(76, 175, 80, 0.6);
+        }
+
+        /* Адаптация для очень маленьких экранов */
+        @media (max-width: 480px) {
+            .game-board {
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: repeat(6, 1fr);
+                gap: 5px;
+                padding: 6px;
+                max-width: 95%;
+            }
+
+            .container {
+                padding: 3px;
+            }
+
+            button {
+                min-width: 100px;
+                padding: 8px 12px;
+                font-size: 0.9rem;
+                min-height: 35px;
+            }
+
+            .quiz-content {
+                padding: 15px;
+            }
+
+            .quiz-options {
+                gap: 6px;
+            }
+
+            .quiz-option {
+                padding: 8px;
+                min-height: 70px;
+            }
+            
+            .quiz-header-icon {
+                font-size: 2.5rem;
+            }
+            
+            .game-info {
+                margin-bottom: 8px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .game-board {
+                gap: 4px;
+            }
+
+            .card {
+                min-height: 60px;
+            }
+
+            button {
+                min-width: 90px;
+                font-size: 0.8rem;
+                padding: 7px 10px;
+            }
+            
+            .quiz-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .quiz-question {
+                font-size: 1rem;
+                padding: 6px;
+            }
+        }
+
+        @media (max-height: 600px) and (orientation: landscape) {
+            .container {
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .game-board {
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: repeat(3, 1fr);
+                max-height: 65vh;
+                margin-bottom: 3px;
+            }
+
+            .game-info {
+                margin: 3px auto 6px;
+                padding: 6px 10px;
+                font-size: 0.9rem;
+            }
+
+            h1 {
+                margin-bottom: 2px;
+                font-size: 1.4rem;
+                padding: 6px;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+                padding: 5px 8px;
+                margin-bottom: 4px;
+            }
+
+            .controls {
+                padding: 5px 0 8px;
+            }
+
+            button {
+                padding: 6px 10px;
+                min-width: 90px;
+                min-height: 35px;
+                font-size: 0.9rem;
+            }
+            
+            .quiz-content {
+                padding: 12px;
+                max-width: 400px;
+            }
+            
+            .quiz-option {
+                min-height: 60px;
+                padding: 8px;
+            }
+        }
+
+        @media (max-height: 500px) and (orientation: landscape) {
+            .game-board {
+                grid-template-columns: repeat(6, 1fr);
+                grid-template-rows: repeat(2, 1fr);
+                max-height: 60vh;
+            }
+
+            h1 {
+                font-size: 1.2rem;
+                padding: 4px;
+            }
+
+            .subtitle {
+                font-size: 0.9rem;
+                padding: 4px 6px;
+            }
+
+            .game-info {
+                font-size: 0.8rem;
+                padding: 4px 8px;
+                margin-bottom: 4px;
+            }
+            
+            .controls {
+                padding: 4px 0 6px;
+            }
+        }
+
+        @media (min-width: 1024px) and (min-height: 768px) {
+            .game-board {
+                gap: 15px;
+                max-width: 800px;
+                max-height: 800px;
+            }
+
+            .card {
+                min-height: 100px;
+            }
+            
+            .quiz-option {
+                min-height: 100px;
+            }
+            
+            button {
+                min-width: 140px;
+                padding: 12px 25px;
+                font-size: 1.2rem;
+                min-height: 45px;
+            }
+        }
+
+        @supports (-webkit-touch-callout: none) {
+            .container {
+                height: -webkit-fill-available;
+            }
+        }
+
+        .no-select {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="no-select">Мемори: Цифры 1-6</h1>
+        <div class="subtitle no-select">Найди пары одинаковых цифр</div>
+
+        <div class="game-info no-select">
+            <div class="pairs">Пары: <span id="pairs-count">0</span>/6</div>
+            <div class="moves">Ходы: <span id="moves-count">0</span></div>
+        </div>
+
+        <div class="game-board-container">
+            <div class="game-board" id="game-board">
+                </div>
+        </div>
+
+        <div class="controls">
+            <button id="restart-btn" class="no-select">Новая игра</button>
+            <button id="sound-btn" class="no-select">Звук: Вкл</button>
+        </div>
+    </div>
+
+    <div class="quiz-modal" id="quiz-modal">
+        <div class="quiz-content">
+            <div class="quiz-header">
+                <div class="quiz-header-icon" id="replay-sound-btn">🔊</div>
+            </div>
+            <div class="quiz-question" id="quiz-question">
+                Какой цифре соответствует этот звук?
+            </div>
+            <div class="quiz-options" id="quiz-options">
+                </div>
+            <div class="quiz-feedback" id="quiz-feedback"></div>
+        </div>
+    </div>
+
+    <div class="win-message" id="win-message">
+        <h2 class="no-select">Поздравляем! 🎉</h2>
+        <p class="no-select">Ты нашёл все пары цифр!</p>
+        <p class="no-select">Ходы: <span id="final-moves">0</span></p>
+        <button id="play-again-btn" class="no-select">Играть ещё раз!</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Элементы DOM
+            const gameBoard = document.getElementById('game-board');
+            const movesCount = document.getElementById('moves-count');
+            const pairsCount = document.getElementById('pairs-count');
+            const restartBtn = document.getElementById('restart-btn');
+            const soundBtn = document.getElementById('sound-btn');
+            const winMessage = document.getElementById('win-message');
+            const finalMoves = document.getElementById('final-moves');
+            const playAgainBtn = document.getElementById('play-again-btn');
+
+            // Элементы модального окна
+            const quizModal = document.getElementById('quiz-modal');
+            const quizQuestion = document.getElementById('quiz-question');
+            const quizOptions = document.getElementById('quiz-options');
+            const quizFeedback = document.getElementById('quiz-feedback');
+            const replaySoundBtn = document.getElementById('replay-sound-btn');
+
+            // Данные цифр
+            const numbers = [
+                {
+                    id: '1',
+                    name: 'Один',
+                    image: 'img/1.png',
+                    sound: 'audio/1.wav',
+                },
+                {
+                    id: '2',
+                    name: 'Два',
+                    image: 'img/2.png',
+                    sound: 'audio/2.wav',
+                },
+                {
+                    id: '3',
+                    name: 'Три',
+                    image: 'img/3.png',
+                    sound: 'audio/3.wav',
+                },
+                {
+                    id: '4',
+                    name: 'Четыре',
+                    image: 'img/4.png',
+                    sound: 'audio/4.wav',
+                },
+                {
+                    id: '5',
+                    name: 'Пять',
+                    image: 'img/5.png',
+                    sound: 'audio/5.wav',
+                },
+                {
+                    id: '6',
+                    name: 'Шесть',
+                    image: 'img/6.png',
+                    sound: 'audio/6.wav',
+                }
+            ];
+
+            // Словарь для быстрого доступа
+            const numbersDict = {};
+            numbers.forEach(number => {
+                numbersDict[number.id] = number;
+            });
+
+            // Состояние игры
+            let cards = [];
+            let flippedCards = [];
+            let moves = 0;
+            let matchedPairs = 0;
+            let canFlip = true;
+            let soundEnabled = true;
+            let currentQuizNumber = null;
+            let currentMatchedCards = [];
+            let isQuizActive = false;
+            let quizAttempts = 0;
+            let currentSoundId = null; // ID цифры, чей звук сейчас проигрывается в викторине
+            let isSoundPlaying = false; // Флаг для предотвращения наложения аудио
+
+            // Аудио объекты для цифр
+            let numberSounds = {};
+
+            // Функция для определения touch устройства
+            function isTouchDevice() {
+                return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            }
+
+            // Инициализация аудио
+            function initAudio() {
+                try {
+                    // Звуки для цифр
+                    numbers.forEach(number => {
+                        numberSounds[number.id] = createAudio(number.sound, 0.7);
+                    });
+                    
+                } catch (e) {
+                    console.error('Ошибка инициализации аудио:', e);
+                    soundEnabled = false;
+                    soundBtn.textContent = 'Звук: Нет';
+                }
+            }
+
+            // Создание аудио объекта
+            function createAudio(src, volume = 0.7) {
+                try {
+                    const audio = new Audio(src);
+                    audio.volume = volume;
+                    audio.preload = 'auto';
+                    audio.addEventListener('error', (e) => {
+                        console.warn(`Не удалось загрузить аудио: ${src}`);
+                    });
+                    return audio;
+                } catch (e) {
+                    console.error('Ошибка создания аудио:', e);
+                    return null;
+                }
+            }
+
+            // Воспроизведение звука цифры (для переворачивания карточек)
+            function playNumberSound(numberId) {
+                if (!soundEnabled || !numberSounds[numberId]) return;
+
+                try {
+                    const sound = numberSounds[numberId];
+                    const soundClone = sound.cloneNode();
+                    soundClone.volume = sound.volume;
+                    soundClone.play().catch(e => {
+                        if (e.name !== 'NotAllowedError') {
+                            console.log('Ошибка воспроизведения звука:', e);
+                        }
+                    });
+                } catch (e) {
+                    console.error('Ошибка воспроизведения звука:', e);
+                }
+            }
+
+            // Воспроизведение звука для теста с контролем наложения
+            function playQuizSound(numberId) {
+                if (!soundEnabled || isSoundPlaying || !numberSounds[numberId]) return;
+
+                isSoundPlaying = true;
+                
+                // Визуальная индикация, что звук проигрывается (необязательно, но полезно)
+                const soundIcon = document.getElementById('replay-sound-btn');
+                if (soundIcon) soundIcon.style.color = '#1565c0'; 
+
+                try {
+                    const sound = numberSounds[numberId];
+                    const soundClone = sound.cloneNode();
+                    soundClone.volume = sound.volume;
+                    
+                    // Сброс флага после окончания звука
+                    soundClone.onended = () => {
+                        isSoundPlaying = false;
+                        if (soundIcon) soundIcon.style.color = '#ff6b35'; 
+                    };
+
+                    // Обработка ошибки
+                    soundClone.onerror = () => {
+                        console.error('Ошибка воспроизведения звука викторины');
+                        isSoundPlaying = false;
+                        if (soundIcon) soundIcon.style.color = '#ff6b35'; 
+                    };
+
+                    soundClone.play().catch(e => {
+                        if (e.name !== 'NotAllowedError') {
+                            console.log('Ошибка воспроизведения звука викторины:', e);
+                        }
+                        isSoundPlaying = false;
+                        if (soundIcon) soundIcon.style.color = '#ff6b35'; 
+                    });
+                    
+                } catch (e) {
+                    console.error('Ошибка воспроизведения звука викторины:', e);
+                    isSoundPlaying = false;
+                    if (soundIcon) soundIcon.style.color = '#ff6b35'; 
+                }
+            }
+            
+            // Воспроизведение случайного звука цифры для теста
+            function playRandomQuizSound() {
+                const randomNumber = Math.floor(Math.random() * 6) + 1;
+                currentSoundId = randomNumber.toString(); // Запоминаем ID, чей звук проиграли
+                playQuizSound(currentSoundId);
+            }
+
+            // Создание карточек
+            function createCards() {
+                let cardPairs = [];
+                numbers.forEach(number => {
+                    cardPairs.push(number.id);
+                    cardPairs.push(number.id);
+                });
+
+                // Перемешиваем карточки
+                for (let i = cardPairs.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [cardPairs[i], cardPairs[j]] = [cardPairs[j], cardPairs[i]];
+                }
+
+                // Очищаем игровое поле
+                gameBoard.innerHTML = '';
+
+                // Создаем HTML для каждой карточки
+                cardPairs.forEach((numberId, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.dataset.number = numberId;
+                    card.dataset.index = index;
+
+                    card.innerHTML = `
+                        <div class="card-front">
+                            <img src="img/${numberId}.png" alt="Цифра ${numberId}" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\\'font-size: 2rem; font-weight: bold;\\'>${numberId}</span>';">
+                        </div>
+                        <div class="card-back">
+                        </div>
+                    `;
+
+                    // Добавляем обработчики
+                    if (isTouchDevice()) {
+                        card.addEventListener('touchstart', handleCardTouch, { passive: true });
+                        card.addEventListener('click', handleCardClick);
+                    } else {
+                        card.addEventListener('click', handleCardClick);
+                    }
+
+                    gameBoard.appendChild(card);
+                });
+
+                // Сохраняем ссылки на все карточки
+                cards = Array.from(document.querySelectorAll('.card'));
+                canFlip = true;
+                isQuizActive = false;
+                quizAttempts = 0;
+            }
+
+            // Обработчик для touch устройств
+            function handleCardTouch(e) {
+                e.preventDefault();
+                if (!canFlip || isQuizActive) return;
+                const card = e.currentTarget;
+                flipCard(card);
+            }
+
+            // Обработчик для click
+            function handleCardClick(e) {
+                if (!canFlip || isQuizActive) return;
+                const card = e.currentTarget;
+                flipCard(card);
+            }
+
+            // Переворот карточки
+            function flipCard(card) {
+                if (card.classList.contains('flipped') || card.classList.contains('matched')) {
+                    return;
+                }
+
+                if (flippedCards.length === 2) {
+                    return;
+                }
+
+                card.classList.add('flipped');
+                flippedCards.push(card);
+                
+                // Воспроизводим звук цифры
+                playNumberSound(card.dataset.number);
+
+                if (flippedCards.length === 2) {
+                    moves++;
+                    movesCount.textContent = moves;
+                    canFlip = false;
+
+                    setTimeout(checkMatch, 500);
+                }
+            }
+
+            // Проверка совпадения карточек
+            function checkMatch() {
+                const card1 = flippedCards[0];
+                const card2 = flippedCards[1];
+
+                if (card1.dataset.number === card2.dataset.number) {
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    
+                    currentMatchedCards = [card1, card2];
+                    currentQuizNumber = card1.dataset.number;
+
+                    // Показываем тест через 300мс
+                    setTimeout(showQuiz, 300);
+
+                } else {
+                    setTimeout(() => {
+                        card1.classList.remove('flipped');
+                        card2.classList.remove('flipped');
+                        canFlip = true;
+                    }, 800);
+                }
+
+                flippedCards = [];
+            }
+
+            // Показ теста
+            function showQuiz() {
+                isQuizActive = true;
+                quizAttempts = 0;
+                
+                // Воспроизводим случайный звук и запоминаем его ID
+                playRandomQuizSound();
+
+                quizQuestion.textContent = 'Какой цифре соответствует этот звук?';
+
+                quizOptions.innerHTML = '';
+                quizFeedback.textContent = '';
+                quizFeedback.className = 'quiz-feedback';
+
+                generateNewQuizOptions();
+
+                quizModal.style.display = 'flex';
+            }
+            
+            // Генерирует 3 варианта ответа: 1 правильный (текущий звук) и 2 случайных неправильных
+            function generateNewQuizOptions() {
+                const correctOption = currentSoundId; // Правильный ответ - ID только что проигранного звука
+                const allOptions = numbers.map(n => n.id);
+                
+                // Отфильтровываем неправильные ответы
+                let wrongOptions = allOptions.filter(id => id !== correctOption);
+                
+                // Перемешиваем неправильные и берем 2
+                wrongOptions = wrongOptions.sort(() => Math.random() - 0.5).slice(0, 2);
+                
+                // Собираем все опции: правильный + 2 неправильных
+                let selectedOptions = [correctOption, ...wrongOptions];
+                
+                // Перемешиваем варианты для случайного расположения
+                selectedOptions = selectedOptions.sort(() => Math.random() - 0.5);
+
+                quizOptions.innerHTML = '';
+                quizFeedback.textContent = '';
+                quizFeedback.className = 'quiz-feedback';
+                
+                selectedOptions.forEach(option => {
+                    const optionBtn = document.createElement('div');
+                    optionBtn.className = 'quiz-option';
+                    optionBtn.dataset.option = option;
+                    
+                    // Вставляем картинку цифры
+                    optionBtn.innerHTML = `<img src="img/${option}.png" alt="Цифра ${option}">`;
+                    
+                    optionBtn.addEventListener('click', () => {
+                        // Ограничение: нельзя выбрать ответ, пока играет звук
+                        if (isSoundPlaying) return; 
+                        checkQuizAnswer(option);
+                    });
+                    
+                    quizOptions.appendChild(optionBtn);
+                });
+                
+                const allOptionsBtns = quizOptions.querySelectorAll('.quiz-option');
+                allOptionsBtns.forEach(opt => {
+                    opt.style.pointerEvents = 'auto';
+                });
+            }
+
+            // Проверка ответа в тесте
+            function checkQuizAnswer(selected) {
+                // Ограничение: нельзя выбрать ответ, пока играет звук
+                if (isSoundPlaying) return; 
+                
+                const allOptions = quizOptions.querySelectorAll('.quiz-option');
+                allOptions.forEach(opt => {
+                    // Отключаем клики на всех кнопках, пока идет проверка
+                    opt.style.pointerEvents = 'none';
+                });
+
+                quizAttempts++;
+
+                const selectedBtn = quizOptions.querySelector(`[data-option="${selected}"]`);
+                
+                // --- Логика проверки ответа ---
+                if (selected === currentSoundId) {
+                    // Правильный ответ
+                    selectedBtn.classList.add('correct');
+                    quizFeedback.textContent = 'Правильно! ✓';
+                    quizFeedback.classList.remove('wrong');
+                    quizFeedback.classList.add('correct');
+
+                    // Завершаем тест через 1 секунду
+                    setTimeout(() => {
+                        quizModal.style.display = 'none';
+                        canFlip = true;
+                        isQuizActive = false;
+                        currentQuizNumber = null;
+                        currentMatchedCards = [];
+                        currentSoundId = null; // Сброс ID звука
+                        
+                        // Обновляем счетчик пар
+                        matchedPairs++;
+                        pairsCount.textContent = matchedPairs;
+                        
+                        // Проверяем, завершена ли игра
+                        if (matchedPairs === numbers.length) {
+                            endGame();
+                        }
+                    }, 1000);
+
+                } else {
+                    // Неверный ответ
+                    selectedBtn.classList.add('wrong');
+                    
+                    quizFeedback.textContent = 'Неверно! Попробуй снова.';
+                    quizFeedback.classList.add('wrong');
+
+                    setTimeout(() => {
+                        selectedBtn.classList.remove('wrong');
+                        
+                        if (quizAttempts >= 3) {
+                            // После 3 попыток, показываем правильный ответ и пропускаем
+                            const correctBtn = quizOptions.querySelector(`[data-option="${currentSoundId}"]`);
+                            if (correctBtn) {
+                                correctBtn.classList.add('correct');
+                            }
+                            
+                            quizFeedback.textContent = `Правильно, это цифра ${currentSoundId}! ✓`;
+                            quizFeedback.classList.remove('wrong');
+                            quizFeedback.classList.add('correct');
+                            
+                            // Завершаем тест через 1 секунду
+                            setTimeout(() => {
+                                quizModal.style.display = 'none';
+                                canFlip = true;
+                                isQuizActive = false;
+                                currentQuizNumber = null;
+                                currentMatchedCards = [];
+                                currentSoundId = null; // Сброс ID звука
+
+                                // Обновляем счетчик пар
+                                matchedPairs++;
+                                pairsCount.textContent = matchedPairs;
+                                
+                                // Проверяем, завершена ли игра
+                                if (matchedPairs === numbers.length) {
+                                    endGame();
+                                }
+                            }, 1000);
+
+                        } else {
+                            // Меньше 3 попыток - меняем варианты
+                            generateNewQuizOptions();
+                            
+                            // Воспроизводим новый случайный звук для нового раунда
+                            playRandomQuizSound();
+                        }
+
+                    }, 800);
+                }
+            }
+
+            // Завершение игры
+            function endGame() {
+                finalMoves.textContent = moves;
+                winMessage.style.display = 'flex';
+                createConfetti();
+            }
+
+            // Создание конфетти
+            function createConfetti() {
+                const colors = ['#ffcc00', '#ff6b35', '#42a5f5', '#4CAF50', '#9C27B0', '#FF4081'];
+
+                for (let i = 0; i < 60; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.style.position = 'fixed';
+                    confetti.style.width = Math.random() * 15 + 8 + 'px';
+                    confetti.style.height = Math.random() * 15 + 8 + 'px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0%';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.top = '-30px';
+                    confetti.style.zIndex = '1001';
+                    confetti.style.opacity = '0.9';
+
+                    document.body.appendChild(confetti);
+
+                    const duration = 2000 + Math.random() * 2000;
+                    const animation = confetti.animate([
+                        {
+                            transform: 'translateY(0) rotate(0deg)',
+                            opacity: 1
+                        },
+                        {
+                            transform: `translateY(${window.innerHeight + 50}px) rotate(${Math.random() * 720}deg)`,
+                            opacity: 0
+                        }
+                    ], {
+                        duration: duration,
+                        easing: 'cubic-bezier(0.215, 0.610, 0.355, 1)'
+                    });
+
+                    animation.onfinish = () => {
+                        if (confetti.parentNode) {
+                            confetti.remove();
+                        }
+                    };
+                }
+            }
+
+            // Начало новой игры
+            function startNewGame() {
+                flippedCards = [];
+                moves = 0;
+                matchedPairs = 0;
+                movesCount.textContent = moves;
+                pairsCount.textContent = matchedPairs;
+                canFlip = true;
+                currentQuizNumber = null;
+                currentMatchedCards = [];
+                quizAttempts = 0;
+                currentSoundId = null; 
+                isSoundPlaying = false;
+
+                quizModal.style.display = 'none';
+                winMessage.style.display = 'none';
+
+                document.querySelectorAll('[style*="position: fixed"][style*="z-index: 1001"]').forEach(el => {
+                    if (el.classList.length === 0) el.remove();
+                });
+
+                // Сброс иконки звука
+                const soundIcon = document.getElementById('replay-sound-btn');
+                if (soundIcon) soundIcon.style.color = '#ff6b35'; 
+
+                createCards();
+            }
+
+            // Переключение звука
+            function toggleSound() {
+                soundEnabled = !soundEnabled;
+                soundBtn.textContent = `Звук: ${soundEnabled ? 'Вкл' : 'Выкл'}`;
+            }
+
+            // Обработчики событий для кнопок
+            restartBtn.addEventListener('click', startNewGame);
+            playAgainBtn.addEventListener('click', startNewGame);
+            soundBtn.addEventListener('click', toggleSound);
+            
+            // Обработчик для повторного проигрывания звука в тесте
+            replaySoundBtn.addEventListener('click', () => {
+                if (currentSoundId && isQuizActive) {
+                    playQuizSound(currentSoundId);
+                }
+            });
+
+            // Предотвращение масштабирования на мобильных
+            document.addEventListener('touchmove', function(e) {
+                if (e.scale !== 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            // Предотвращение контекстного меню
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            });
+
+            // Исправление для iOS
+            document.body.addEventListener('touchstart', function() {}, { passive: true });
+
+            // Инициализация и начало игры
+            initAudio();
+            startNewGame();
+        });
+    </script>
+</body>
+</html>
